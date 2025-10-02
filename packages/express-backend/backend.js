@@ -33,18 +33,19 @@ const users = {
   ]
 };
 
-const findUserByName = (name) => {
-  return users["users_list"].filter(
-    (user) => user["name"] === name
-  );
-};
-
 const findUserById = (id) =>
   users["users_list"].find((user) => user["id"] === id);
 
 const addUser = (user) => {
   users["users_list"].push(user);
   return user;
+};
+
+
+const deleteUserById = (id) => {
+  const initialLength = users["users_list"].length;
+  users["users_list"] = users["users_list"].filter((user) => user.id !== id);
+  return users["users_list"].length < initialLength; 
 };
 
 app.use(express.json());
@@ -55,13 +56,27 @@ app.get("/", (req, res) => {
 
 app.get("/users", (req, res) => {
   const name = req.query.name;
-  if (name != undefined) {
-    let result = findUserByName(name);
-    result = { users_list: result };
-    res.send(result);
-  } else {
-    res.send(users);
+  const job = req.query.job;
+  let result = users["users_list"];
+
+  if (name && job) {
+
+    result = result.filter(
+      (user) => user.name === name && user.job === job
+    );
+  } else if (name) {
+
+    result = result.filter(
+      (user) => user.name === name
+    );
+  } else if (job) {
+
+    result = result.filter(
+      (user) => user.job === job
+    );
   }
+
+  res.send({ users_list: result });
 });
 
 app.get("/users/:id", (req, res) => {
@@ -77,7 +92,18 @@ app.get("/users/:id", (req, res) => {
 app.post("/users", (req, res) => {
   const userToAdd = req.body;
   addUser(userToAdd);
-  res.status(201).send(); // Using 201 Created is often better for POST than the default 200
+  res.status(201).send();
+});
+
+app.delete("/users/:id", (req, res) => {
+  const id = req.params.id;
+  const wasDeleted = deleteUserById(id);
+
+  if (wasDeleted) {
+    res.status(204).send();
+  } else {
+    res.status(404).send("Resource not found.");
+  }
 });
 
 app.listen(port, () => {
