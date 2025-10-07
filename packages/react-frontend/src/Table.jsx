@@ -1,8 +1,9 @@
-// src/Table.jsx
+// packages/react-frontend/src/Table.jsx
 function TableHeader() {
   return (
     <thead>
       <tr>
+        <th>ID</th>
         <th>Name</th>
         <th>Job</th>
         <th>Remove</th>
@@ -13,35 +14,30 @@ function TableHeader() {
 
 function TableBody(props) {
   const rows = props.characterData.map((row, index) => {
+    const key = row.id ?? `row-${index}`;
     return (
-        <tr key={index}>
+      <tr key={key}>
+        <td>{row.id}</td>
         <td>{row.name}</td>
         <td>{row.job}</td>
         <td>
-            <button onClick={() => props.removeCharacter(index)}>
-            Delete
-            </button>
+          <button onClick={() => props.removeCharacter(row.id)}>Delete</button>
         </td>
-        </tr>
+      </tr>
     );
-   }
-  );
-  return (
-      <tbody>
-        {rows}
-       </tbody>
-   );
+  });
+  return <tbody>{rows}</tbody>;
 }
 
 function Table(props) {
-    return (
-      <table>
-        <TableHeader />
-        <TableBody
+  return (
+    <table>
+      <TableHeader />
+      <TableBody
         characterData={props.characterData}
         removeCharacter={props.removeCharacter}
-        />
-      </table>
-    );
+      />
+    </table>
+  );
 }
 export default Table;
