@@ -3,12 +3,13 @@ import React, { useState, useEffect } from "react";
 import Table from "./Table";
 import Form from "./Form";
 
+const API = "http://localhost:8000";
+
 function MyApp() {
   const [characters, setCharacters] = useState([]);
 
   function fetchUsers() {
-    const promise = fetch("http://localhost:8000/users");
-    return promise;
+    return fetch(`${API}/users`);
   }
 
   useEffect(() => {
@@ -21,19 +22,19 @@ function MyApp() {
   }, []);
 
   function postUser(person) {
-    const promise = fetch("http://localhost:8000/users", {
+    return fetch(`${API}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(person),
     });
-    return promise;
   }
 
   function updateList(person) {
     postUser(person)
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201) {
-          setCharacters([...characters, person]);
+          const created = await res.json();
+          setCharacters((prev) => [...prev, created]);
         } else {
           console.log("POST failed with status:", res.status);
         }
@@ -43,9 +44,20 @@ function MyApp() {
       });
   }
 
-  function removeOneCharacter(index) {
-    const updated = characters.filter((_, i) => i !== index);
-    setCharacters(updated);
+  function removeOneCharacter(id) {
+    fetch(`${API}/users/${id}`, { method: "DELETE" })
+      .then((res) => {
+        if (res.status === 204) {
+          setCharacters((prev) => prev.filter((c) => c.id !== id));
+        } else if (res.status === 404) {
+          console.log("Delete failed: resource not found");
+        } else {
+          console.log("Delete failed with status:", res.status);
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
   return (
