@@ -1,4 +1,6 @@
+// packages/express-backend/backend.js
 import express from "express";
+import cors from "cors";
 
 const app = express();
 const port = 8000;
@@ -41,12 +43,13 @@ const addUser = (user) => {
   return user;
 };
 
-
 const deleteUserById = (id) => {
   const initialLength = users["users_list"].length;
   users["users_list"] = users["users_list"].filter((user) => user.id !== id);
   return users["users_list"].length < initialLength; 
 };
+
+app.use(cors());
 
 app.use(express.json());
 
@@ -60,20 +63,13 @@ app.get("/users", (req, res) => {
   let result = users["users_list"];
 
   if (name && job) {
-
     result = result.filter(
       (user) => user.name === name && user.job === job
     );
   } else if (name) {
-
-    result = result.filter(
-      (user) => user.name === name
-    );
+    result = result.filter((user) => user.name === name);
   } else if (job) {
-
-    result = result.filter(
-      (user) => user.job === job
-    );
+    result = result.filter((user) => user.job === job);
   }
 
   res.send({ users_list: result });
