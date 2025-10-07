@@ -7,31 +7,11 @@ const port = 8000;
 
 const users = {
   users_list: [
-    {
-      id: "xyz789",
-      name: "Charlie",
-      job: "Janitor"
-    },
-    {
-      id: "abc123",
-      name: "Mac",
-      job: "Bouncer"
-    },
-    {
-      id: "ppp222",
-      name: "Mac",
-      job: "Professor"
-    },
-    {
-      id: "yat999",
-      name: "Dee",
-      job: "Aspring actress"
-    },
-    {
-      id: "zap555",
-      name: "Dennis",
-      job: "Bartender"
-    }
+    { id: "xyz789", name: "Charlie", job: "Janitor" },
+    { id: "abc123", name: "Mac", job: "Bouncer" },
+    { id: "ppp222", name: "Mac", job: "Professor" },
+    { id: "yat999", name: "Dee", job: "Aspring actress" },
+    { id: "zap555", name: "Dennis", job: "Bartender" }
   ]
 };
 
@@ -46,11 +26,18 @@ const addUser = (user) => {
 const deleteUserById = (id) => {
   const initialLength = users["users_list"].length;
   users["users_list"] = users["users_list"].filter((user) => user.id !== id);
-  return users["users_list"].length < initialLength; 
+  return users["users_list"].length < initialLength;
 };
 
-app.use(cors());
+function generateId() {
+  const letters = Array.from({ length: 3 }, () =>
+    String.fromCharCode(97 + Math.floor(Math.random() * 26))
+  ).join("");
+  const digits = String(Math.floor(100 + Math.random() * 900));
+  return `${letters}${digits}`;
+}
 
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -63,9 +50,7 @@ app.get("/users", (req, res) => {
   let result = users["users_list"];
 
   if (name && job) {
-    result = result.filter(
-      (user) => user.name === name && user.job === job
-    );
+    result = result.filter((user) => user.name === name && user.job === job);
   } else if (name) {
     result = result.filter((user) => user.name === name);
   } else if (job) {
@@ -87,8 +72,16 @@ app.get("/users/:id", (req, res) => {
 
 app.post("/users", (req, res) => {
   const userToAdd = req.body;
-  addUser(userToAdd);
-  res.status(201).send();
+
+  if (!userToAdd || !userToAdd.name || !userToAdd.job) {
+    return res.status(400).send("Invalid user payload.");
+  }
+
+
+  const created = { ...userToAdd, id: generateId() };
+  addUser(created);
+
+  res.status(201).send(created);
 });
 
 app.delete("/users/:id", (req, res) => {
@@ -103,7 +96,5 @@ app.delete("/users/:id", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(
-    `Example app listening at http://localhost:${port}`
-  );
+  console.log(`Example app listening at http://localhost:${port}`);
 });
