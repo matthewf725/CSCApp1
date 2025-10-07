@@ -20,8 +20,27 @@ function MyApp() {
       });
   }, []);
 
+  function postUser(person) {
+    const promise = fetch("http://localhost:8000/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(person),
+    });
+    return promise;
+  }
+
   function updateList(person) {
-    setCharacters([...characters, person]);
+    postUser(person)
+      .then((res) => {
+        if (res.status === 201) {
+          setCharacters([...characters, person]);
+        } else {
+          console.log("POST failed with status:", res.status);
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
   function removeOneCharacter(index) {
