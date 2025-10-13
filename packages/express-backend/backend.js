@@ -13,9 +13,9 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-// GET /users (supports none, name, job, and name+job combined)
 app.get("/users", (req, res) => {
   const { name, job } = req.query;
+
   userServices
     .getUsers(name, job)
     .then((list) => res.send({ users_list: list }))
@@ -25,7 +25,6 @@ app.get("/users", (req, res) => {
     });
 });
 
-// GET /users/:id
 app.get("/users/:id", (req, res) => {
   const id = req.params.id;
   userServices
@@ -40,31 +39,19 @@ app.get("/users/:id", (req, res) => {
     });
 });
 
-// POST /users
 app.post("/users", (req, res) => {
   const { name, job } = req.body || {};
   if (!name || !job) return res.status(400).send("Invalid user payload.");
+
   userServices
     .addUser({ name, job })
     .then((created) => res.status(201).send(created))
     .catch((err) => {
       console.error(err);
+      if (err && err.name === "ValidationError") {
+        return res.status(400).send(err.message);
+      }
       res.status(500).send("Internal server error.");
-    });
-});
-
-// DELETE /users/:id
-app.delete("/users/:id", (req, res) => {
-  const id = req.params.id;
-  userServices
-    .deleteUserById(id)
-    .then((deleted) => {
-      if (!deleted) return res.status(404).send("Resource not found.");
-      res.status(204).send();
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(400).send("Invalid id.");
     });
 });
 
