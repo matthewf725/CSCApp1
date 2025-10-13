@@ -33,7 +33,7 @@ function MyApp() {
     postUser(person)
       .then(async (res) => {
         if (res.status === 201) {
-          const created = await res.json();
+          const created = await res.json(); 
           setCharacters((prev) => [...prev, created]);
         } else {
           console.log("POST failed with status:", res.status);
@@ -48,7 +48,7 @@ function MyApp() {
     fetch(`${API}/users/${id}`, { method: "DELETE" })
       .then((res) => {
         if (res.status === 204) {
-          setCharacters((prev) => prev.filter((c) => c.id !== id));
+          setCharacters((prev) => prev.filter((c) => c._id !== id));
         } else if (res.status === 404) {
           console.log("Delete failed: resource not found");
         } else {
