@@ -1,98 +1,101 @@
 // packages/express-backend/backend.js
 import express from "express";
 import cors from "cors";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+// IMPORTANT: these are the starter-provided service functions
+// (you just copied them from the instructor's repo into ./models)
+import {
+  findUsers,
+  findUserById,
+  addUser,           // or createUser depending on the starter; both patterns are common
+  deleteUserById,
+} from "./models/user-services.js";
+
+dotenv.config();
 
 const app = express();
-const port = 8000;
+const port = process.env.PORT || 8000;
 
-const users = {
-  users_list: [
-    { id: "xyz789", name: "Charlie", job: "Janitor" },
-    { id: "abc123", name: "Mac", job: "Bouncer" },
-    { id: "ppp222", name: "Mac", job: "Professor" },
-    { id: "yat999", name: "Dee", job: "Aspring actress" },
-    { id: "zap555", name: "Dennis", job: "Bartender" }
-  ]
-};
+// --- DB connection ---
+const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/cscapp";
+mongoose
+  .connect(mongoUri)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    process.exit(1);
+  });
 
-const findUserById = (id) =>
-  users["users_list"].find((user) => user["id"] === id);
-
-const addUser = (user) => {
-  users["users_list"].push(user);
-  return user;
-};
-
-const deleteUserById = (id) => {
-  const initialLength = users["users_list"].length;
-  users["users_list"] = users["users_list"].filter((user) => user.id !== id);
-  return users["users_list"].length < initialLength;
-};
-
-function generateId() {
-  const letters = Array.from({ length: 3 }, () =>
-    String.fromCharCode(97 + Math.floor(Math.random() * 26))
-  ).join("");
-  const digits = String(Math.floor(100 + Math.random() * 900));
-  return `${letters}${digits}`;
-}
-
+// --- Middleware ---
 app.use(cors());
 app.use(express.json());
 
+// --- Routes ---
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
+// GET /users
+// supports: /users, /users?name=, /users?job=, and /users?name=&job=
 app.get("/users", (req, res) => {
-  const name = req.query.name;
-  const job = req.query.job;
-  let result = users["users_list"];
+  const { name, job } = req.query;
 
-  if (name && job) {
-    result = result.filter((user) => user.name === name && user.job === job);
-  } else if (name) {
-    result = result.filter((user) => user.name === name);
-  } else if (job) {
-    result = result.filter((user) => user.job === job);
-  }
+  // Build a combined filter (this satisfies the “name+job at once” requirement)
+  const filter = {};
+  if (name) filter.name = name;
+  if (job)  filter.job  = job;
 
-  res.send({ users_list: result });
+  // NOTE: starter services return a Mongoose Query (thenable)
+  findUsers(filter)
+    .then((list) => res.send({ users_list: list }))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Internal server error.");
+    });
 });
 
+// GET /users/:id
 app.get("/users/:id", (req, res) => {
-  const id = req.params["id"];
-  let result = findUserById(id);
-  if (result === undefined) {
-    res.status(404).send("Resource not found.");
-  } else {
-    res.send(result);
-  }
+  const id = req.params.id;
+  findUserById(id)
+    .then((doc) => {
+      if (!doc) return res.status(404).send("Resource not found.");
+      res.send(doc);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(400).send("Invalid id.");
+    });
 });
 
+// POST /users
 app.post("/users", (req, res) => {
-  const userToAdd = req.body;
+  const { name, job } = req.body || {};
+  if (!name || !job) return res.status(400).send("Invalid user payload.");
 
-  if (!userToAdd || !userToAdd.name || !userToAdd.job) {
-    return res.status(400).send("Invalid user payload.");
-  }
-
-
-  const created = { ...userToAdd, id: generateId() };
-  addUser(created);
-
-  res.status(201).send(created);
+  // Depending on the starter you pasted, this might be addUser(...) or createUser(...)
+  addUser({ name, job })
+    .then((created) => res.status(201).send(created))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Internal server error.");
+    });
 });
 
+// DELETE /users/:id  (MUST use DB: findByIdAndDelete in the service)
 app.delete("/users/:id", (req, res) => {
   const id = req.params.id;
-  const wasDeleted = deleteUserById(id);
-
-  if (wasDeleted) {
-    res.status(204).send();
-  } else {
-    res.status(404).send("Resource not found.");
-  }
+  deleteUserById(id)
+    .then((deleted) => {
+      if (!deleted) return res.status(404).send("Resource not found.");
+      res.status(204).send();
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(400).send("Invalid id.");
+    });
 });
 
 app.listen(port, () => {
