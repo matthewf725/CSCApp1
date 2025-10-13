@@ -1,4 +1,3 @@
-// packages/react-frontend/src/MyApp.jsx
 import React, { useState, useEffect } from "react";
 import Table from "./Table";
 import Form from "./Form";
@@ -14,11 +13,12 @@ function MyApp() {
 
   useEffect(() => {
     fetchUsers()
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load users: ${res.status}`);
+        return res.json();
+      })
       .then((json) => setCharacters(json["users_list"]))
-      .catch((error) => {
-        console.log(error);
-      });
+      .catch((error) => console.log(error));
   }, []);
 
   function postUser(person) {
@@ -33,15 +33,14 @@ function MyApp() {
     postUser(person)
       .then(async (res) => {
         if (res.status === 201) {
-          const created = await res.json(); 
+          const created = await res.json();
           setCharacters((prev) => [...prev, created]);
         } else {
-          console.log("POST failed with status:", res.status);
+          const text = await res.text();
+          console.log("POST failed:", res.status, text);
         }
       })
-      .catch((error) => {
-        console.log(error);
-      });
+      .catch((error) => console.log(error));
   }
 
   function removeOneCharacter(id) {
@@ -50,14 +49,12 @@ function MyApp() {
         if (res.status === 204) {
           setCharacters((prev) => prev.filter((c) => c._id !== id));
         } else if (res.status === 404) {
-          console.log("Delete failed: resource not found");
+          console.log("Delete failed: not found");
         } else {
           console.log("Delete failed with status:", res.status);
         }
       })
-      .catch((error) => {
-        console.log(error);
-      });
+      .catch((error) => console.log(error));
   }
 
   return (

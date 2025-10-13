@@ -55,6 +55,20 @@ app.post("/users", (req, res) => {
     });
 });
 
+app.delete("/users/:id", (req, res) => {
+  const id = req.params.id;
+  userServices
+    .deleteUserById(id)
+    .then((deleted) => {
+      if (!deleted) return res.status(404).send("Resource not found.");
+      res.status(204).send();
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(400).send("Invalid id.");
+    });
+});
+
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });

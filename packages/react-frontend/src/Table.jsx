@@ -1,4 +1,3 @@
-// packages/react-frontend/src/Table.jsx
 function TableHeader() {
   return (
     <thead>
